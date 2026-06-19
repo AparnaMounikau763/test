@@ -11,25 +11,20 @@ env:
   IMAGE_NAME: python-app
 
 jobs:
-
   build-and-deploy:
-
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ github.ref_name == 'develop' && 'DEV'
-            || github.ref_name == 'qa' && 'QA'
-            || 'PROD' }}
+      name: ${{ github.ref_name == 'develop' && 'DEV' || github.ref_name == 'qa' && 'QA' || 'PROD' }}
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Generate Docker Tag
         id: tag
         run: |
-          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "tag=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -40,12 +35,12 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG} .
+            -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }} .
 
       - name: Push Docker Image
         run: |
           docker push \
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG }
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -53,14 +48,12 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-
           script: |
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
 
-            docker pull \
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}
+            docker pull $IMAGE
 
             docker stop python-app || true
-
             docker rm python-app || true
 
             docker run -d \
@@ -68,4 +61,4 @@ jobs:
               --restart always \
               --env-file ${{ secrets.ENV_FILE_PATH }} \
               -p 5000:5000 \
-              ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}
+              $IMAGE
