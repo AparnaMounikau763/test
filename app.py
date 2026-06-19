@@ -1,9 +1,7 @@
-from flask import Flask
 import os
+from flask import Flask
 
 app = Flask(__name__)
-
-ENVIRONMENT = os.getenv("ENVIRONMENT", "DEV")
 
 @app.route("/")
 def home():
