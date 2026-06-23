@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          python -m unittest discover
+          python -m unittest discover -s tests
 
       - name: Generate Docker Tag
         id: tag

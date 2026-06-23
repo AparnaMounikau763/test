@@ -7,7 +7,7 @@ app = Flask(__name__)
 def home():
     return {
         "environment": os.getenv("APP_ENV"),
-        "message": os.getenv("WELCOME FROM PROD"),
+        "message": os.getenv("WELCOME_MESSAGE"),
         "debug": os.getenv("DEBUG")
     }
 
