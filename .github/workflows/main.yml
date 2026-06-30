@@ -9,9 +9,8 @@ env:
   IMAGE_NAME: python-app
 
 jobs:
-
   build:
-    name: Build, Test, SonarQube & Push Docker Image
+    name: Build, Test, SonarCloud & Push Docker Image
     runs-on: ubuntu-latest
 
     outputs:
@@ -73,7 +72,7 @@ jobs:
     environment: DEV
 
     steps:
-      - name: Deploy Application
+      - name: Deploy to DEV
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -96,12 +95,14 @@ jobs:
 
   deploy-qa:
     name: Deploy to QA
-    needs: deploy-dev
+    needs:
+      - build
+      - deploy-dev
     runs-on: ubuntu-latest
     environment: QA
 
     steps:
-      - name: Deploy Application
+      - name: Deploy to QA
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -124,12 +125,14 @@ jobs:
 
   deploy-prod:
     name: Deploy to PROD
-    needs: deploy-qa
+    needs:
+      - build
+      - deploy-qa
     runs-on: ubuntu-latest
     environment: PROD
 
     steps:
-      - name: Deploy Application
+      - name: Deploy to PROD
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
